@@ -1,3 +1,5 @@
+from typing import List
+
 from sqlmodel import Column, Enum, Field, SQLModel, Relationship
 import enum
 
@@ -12,8 +14,10 @@ class User(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
     name: str
     email: str
-    password_hash: str
+    username: str
+    hashed_password: str
     cpf: str
     role: str = Field(sa_column=Column(Enum(UserRoles), nullable=False))
 
-    lessons: list["Lesson"] = Relationship(back_populates="users", link_model=UserAccessesLessonLink)
+    lessons: List["Lesson"] = Relationship(back_populates="users", link_model=UserAccessesLessonLink)
+    courses: List["Course"] = Relationship(back_populates="user_who_created")
