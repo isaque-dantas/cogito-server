@@ -12,7 +12,7 @@ class UserService:
     @classmethod
     def get_by_email(cls, email: str) -> User | None:
         with Session(engine) as session:
-            return session.exec(select(User).where(User.email == email)).first()
+            return session.scalars(select(User).where(User.email == email)).first()
 
     @classmethod
     def to_response(cls, user: User) -> UserResponse:
@@ -50,7 +50,7 @@ class UserService:
             edited_user = cls.to_model(edited_data)
             print(edited_user.name)
 
-            session.exec(
+            session.scalars(
                 update(User)
                 .where(User.id == user.id)
                 .values(
@@ -119,7 +119,7 @@ class UserService:
                     .where((User.email == email) | (User.cpf == cpf))
                 )
 
-            return session.exec(stmt).first()
+            return session.scalars(stmt).first()
 
     @classmethod
     def parse_error_detail_for_uniqueness_validation(cls, fields: list[str]) -> str:
@@ -137,5 +137,5 @@ class UserService:
     @classmethod
     def delete(cls, current_user):
         with Session(engine) as session:
-            session.exec(delete(User).where(User.id == current_user.id))
+            session.scalars(delete(User).where(User.id == current_user.id))
             session.commit()
