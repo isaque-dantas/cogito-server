@@ -17,6 +17,12 @@ class Token(BaseModel):
 
 
 class AuthService:
+    unauthorized_error = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
     SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
@@ -48,24 +54,18 @@ class AuthService:
 
     @classmethod
     async def get_current_user(cls, token: Annotated[str, Depends(oauth2_scheme)]):
-        credentials_exception = HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
         try:
             payload = jwt.decode(token, cls.SECRET_KEY, algorithms=[cls.ALGORITHM])
             email = payload.get("sub")
             if email is None:
-                raise credentials_exception
+                raise cls.unauthorized_error
 
         except InvalidTokenError:
-            raise credentials_exception
+            raise cls.unauthorized_error
 
         user = UserService.get_by_email(email)
         if user is None:
-            raise credentials_exception
+            raise cls.unauthorized_error
 
         return user
 
