@@ -3,8 +3,15 @@ from pydantic import BaseModel
 class UserResponse(BaseModel):
     name: str
     email: str
-    username: str
     cpf: str
+    role: str
 
-class UserForm(UserResponse):
+class UserForm(BaseModel):
+    name: str
+    email: str
+    cpf: str
+    password: str
+
+class UserLoginForm(BaseModel):
+    email: str
     password: str

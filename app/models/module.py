@@ -13,4 +13,4 @@ class Module(SQLModel, table=True):
     course_id: int = Field(default=None, foreign_key="course.id")
     course: Course = Relationship(back_populates="modules")
 
-    lessons: List["Course"] = Relationship(back_populates="module")
+    lessons: List["Lesson"] = Relationship(back_populates="module")

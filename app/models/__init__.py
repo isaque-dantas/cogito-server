@@ -1,17 +1,18 @@
-from sqlmodel import Session, SQLModel, create_engine
+import os.path
+
+from sqlmodel import Session, create_engine, SQLModel
 from typing import Annotated
 from fastapi import Depends
+from alembic.config import Config as AlembicConfig
 
 from app.models.user import User
 from app.models.course import Course
 from app.models.module import Module
 from app.models.lesson import Lesson
 
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
-
-connect_args = {"check_same_thread": False}
-engine = create_engine(sqlite_url, connect_args=connect_args)
+alembic_config_path = os.path.join(os.path.dirname(__file__), '../../alembic.ini')
+url = AlembicConfig(alembic_config_path).get_main_option("sqlalchemy.url")
+engine = create_engine(url)
 
 
 def create_db_and_tables():

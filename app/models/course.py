@@ -10,4 +10,4 @@ class Course(SQLModel, table=True):
     user_who_created_id: int = Field(default=None, foreign_key="user.id")
     user_who_created: User = Relationship(back_populates="courses")
 
-    modules: List["Module"] = Relationship(back_populates="courses")
+    modules: List["Module"] = Relationship(back_populates="course")

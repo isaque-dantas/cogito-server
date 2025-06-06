@@ -1,6 +1,6 @@
 from sqlmodel import Field, SQLModel, Relationship
 
-from app.models import Module
+from app.models import Module, User
 from app.models.user_accesses_lesson import UserAccessesLessonLink
 
 
