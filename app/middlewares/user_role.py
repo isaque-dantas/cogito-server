@@ -10,8 +10,8 @@ class UserRoleMiddleware:
     def __init__(self, roles_who_can_access: list[str]):
         self.roles_who_can_access = roles_who_can_access
 
-    async def __call__(self, request: Request, token: str = Depends(AuthService.oauth2_scheme)):
-        current_user: User = await AuthService.get_current_user(token)
+    async def __call__(self, request: Request, token: str = Depends(AuthService.mandatory_oauth2_scheme)):
+        current_user: User = await AuthService.get_mandatory_current_user(token)
 
         if current_user.role not in self.roles_who_can_access:
             raise HTTPException(

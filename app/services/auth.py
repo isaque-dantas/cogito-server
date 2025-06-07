@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -23,7 +23,8 @@ class AuthService:
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+    mandatory_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=True)
+    possible_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 
     SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
     ALGORITHM = "HS256"
@@ -53,7 +54,7 @@ class AuthService:
         return encoded_jwt
 
     @classmethod
-    async def get_current_user(cls, token: Annotated[str, Depends(oauth2_scheme)]):
+    async def get_user_from_token(cls, token: str):
         try:
             payload = jwt.decode(token, cls.SECRET_KEY, algorithms=[cls.ALGORITHM])
             email = payload.get("sub")
@@ -69,11 +70,29 @@ class AuthService:
 
         return user
 
+    @classmethod
+    async def get_mandatory_current_user(cls, token: Annotated[str, Depends(mandatory_oauth2_scheme)]):
+        return cls.get_user_from_token(token)
+
+    @classmethod
+    async def get_possible_current_user(cls, token: Annotated[Optional[str], Depends(possible_oauth2_scheme)]) -> Optional[User]:
+        if token is None:
+            return None
+
+        return await cls.get_user_from_token(token)
+
 
 async def get_current_active_user(
-        current_user: Annotated[User, Depends(AuthService.get_current_user)],
+        current_user: Annotated[User, Depends(AuthService.get_mandatory_current_user)],
+):
+    return current_user
+
+
+async def get_possible_current_active_user(
+        current_user: Annotated[Optional[User], Depends(AuthService.get_possible_current_user)],
 ):
     return current_user
 
 
 ActiveUser = Annotated[User, Depends(get_current_active_user)]
+PossibleActiveUser = Annotated[User, Depends(get_possible_current_active_user)]

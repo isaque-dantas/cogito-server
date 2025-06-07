@@ -2,7 +2,8 @@ from collections.abc import Sequence
 from typing import List
 
 from sqlmodel import select, update, delete
-from app.models import Lesson, Session, engine, Module
+from app.models import Lesson, Session, engine, Module, User
+from app.models.user_accesses_lesson import UserAccessesLessonLink
 from app.schemas.lesson import LessonForm, LessonResponse, LessonNestedForm
 
 
@@ -75,3 +76,27 @@ class LessonService:
         with Session(engine) as session:
             session.delete(lesson)
             session.commit()
+
+    @classmethod
+    def register_user_access(cls, lesson: Lesson, current_user: User) -> None:
+        with Session(engine) as session:
+            if cls.has_user_already_accessed_lesson(lesson, current_user):
+                return
+
+            access = UserAccessesLessonLink(
+                user_id=current_user.id,
+                lesson_id=lesson.id
+            )
+
+            session.add(access)
+            session.commit()
+
+    @classmethod
+    def has_user_already_accessed_lesson(cls, lesson: Lesson, user: User) -> bool:
+        with Session(engine) as session:
+            access = session.scalars(
+                select(UserAccessesLessonLink)
+                .where((UserAccessesLessonLink.user_id == user.id) & (UserAccessesLessonLink.lesson_id == lesson.id))
+            ).first()
+
+            return bool(access)

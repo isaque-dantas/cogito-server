@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from app.middlewares.user_role import CoordinatorOnlyDependency, CoordinatorLogged
 from app.middlewares.resource_existence import ExistentCourse
 from app.schemas.course import CourseForm, CoursePatchForm
+from app.services.auth import ActiveUser
 from app.services.course import CourseService
 
 router = APIRouter(prefix="/course")
@@ -33,3 +34,7 @@ async def patch(course: ExistentCourse, edited_data: CoursePatchForm):
 @router.delete("/{course_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[CoordinatorOnlyDependency])
 async def delete(course: ExistentCourse):
     CourseService.delete(course)
+
+@router.post("/{course_id}/subscribe", status_code=status.HTTP_204_NO_CONTENT)
+async def subscribe(course: ExistentCourse, current_user: ActiveUser):
+    CourseService.subscribe(course, current_user)

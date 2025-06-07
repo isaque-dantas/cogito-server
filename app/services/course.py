@@ -1,6 +1,7 @@
 from typing import Sequence
 
 from app.models import Course, engine, User
+from app.models.user_subscribes_in_course import UserSubscribesInCourseLink
 from app.schemas.course import CourseForm, CourseResponse, CoursePatchForm
 from sqlmodel import Session, select, update, delete
 
@@ -69,3 +70,31 @@ class CourseService:
         with Session(engine) as session:
             session.delete(course)
             session.commit()
+
+    @classmethod
+    def subscribe(cls, course: Course, current_user: User) -> None:
+        with Session(engine) as session:
+            if cls.has_user_already_subscribed_to_course(course, current_user):
+                return
+
+            subscription = UserSubscribesInCourseLink(
+                user_id=current_user.id,
+                course_id=course.id
+            )
+
+            session.add(subscription)
+            session.commit()
+
+    @classmethod
+    def has_user_already_subscribed_to_course(cls, course: Course, user: User) -> bool:
+        with Session(engine) as session:
+            subscription = session.scalars(
+                select(UserSubscribesInCourseLink)
+                .where(
+                    (UserSubscribesInCourseLink.user_id == user.id)
+                    &
+                    (UserSubscribesInCourseLink.course_id == course.id)
+                )
+            ).first()
+
+            return bool(subscription)
