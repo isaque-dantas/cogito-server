@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import Depends
 from alembic.config import Config as AlembicConfig
 
-from app.models.user import User
+from app.models.user import User, UserRoles
 from app.models.course import Course
 from app.models.module import Module
 from app.models.lesson import Lesson

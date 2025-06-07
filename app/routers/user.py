@@ -7,7 +7,7 @@ from app.services.user import UserService
 
 router = APIRouter(prefix="/user")
 
-
+# TODO: middleware que valide e-mail e cpf do usuário
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create(user_form: UserForm) -> UserResponse:
     error = UserService.validate(user_form)

@@ -15,6 +15,11 @@ class UserService:
             return session.scalars(select(User).where(User.email == email)).first()
 
     @classmethod
+    def get_by_id(cls, user_id: int) -> User | None:
+        with Session(engine) as session:
+            return session.get(User, user_id)
+
+    @classmethod
     def to_response(cls, user: User) -> UserResponse:
         return UserResponse(
             name=user.name,
@@ -50,7 +55,7 @@ class UserService:
             edited_user = cls.to_model(edited_data)
             print(edited_user.name)
 
-            session.scalars(
+            session.exec(
                 update(User)
                 .where(User.id == user.id)
                 .values(
@@ -137,5 +142,8 @@ class UserService:
     @classmethod
     def delete(cls, current_user):
         with Session(engine) as session:
-            session.scalars(delete(User).where(User.id == current_user.id))
+            session.exec(
+                delete(User)
+                .where(User.id == current_user.id)
+            )
             session.commit()
