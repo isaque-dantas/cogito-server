@@ -1,7 +1,8 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from sqlmodel import Session, select, update, delete
-from starlette import status
 import bcrypt
+from pydantic import EmailStr
+import validate_cpf
 
 from app.models import engine
 from app.models.user import User, UserRoles
@@ -9,6 +10,8 @@ from app.schemas.user import UserResponse, UserForm
 
 
 class UserService:
+    CPF_DIGITS_AMOUT = 11
+
     @classmethod
     def get_by_email(cls, email: str) -> User | None:
         with Session(engine) as session:
@@ -82,8 +85,42 @@ class UserService:
 
         return bcrypt.checkpw(password=plain_encoded, hashed_password=hashed_encoded)
 
+    # @classmethod
+    # def get_exception_for_cpf_and_email(cls, cpf: str, email: EmailStr) -> HTTPException | None:
+    #     invalid_fields: list[str] = []
+    #     detail: dict[str, str] = {}
+    #
+    #     cpf_error_detail = cls.get_cpf_error_detail(cpf)
+    #     if cpf_error_detail:
+    #         detail.update({"cpf": cpf_error_detail})
+    #
+    #     email_error_detail = cls.get_email_error_detail(email)
+    #     if email_error_detail:
+    #         detail.update({"email": email_error_detail})
+    #
+    #     if not invalid_fields:
+    #         return None
+    #
+    #     return HTTPException(
+    #         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+    #         detail=detail
+    #     )
+    #
+    # @classmethod
+    # def get_cpf_error_detail(cls, cpf: str) -> str | None:
+    #     is_valid = validate_cpf.is_valid(cpf)
+    #
+    #     if is_valid:
+    #         return None
+    #
+    #     if len(cpf) != cls.CPF_DIGITS_AMOUT:
+    #         return f"The 'cpf' must have {cls.CPF_DIGITS_AMOUT} characters, but has {len(cpf)}"
+    #
+    #     return "The informed 'cpf' does not exist."
+
     @classmethod
-    def validate(cls, user_form: UserForm, user_being_edited_id: int | None = None) -> HTTPException | None:
+    def validate_unique_fields(cls, user_form: UserForm,
+                               user_being_edited_id: int | None = None) -> HTTPException | None:
         previously_registered_user_with_same_properties: User = (
             cls.get_user_with_same_unique_properties(
                 cpf=user_form.cpf,
@@ -109,8 +146,12 @@ class UserService:
         )
 
     @classmethod
-    def get_user_with_same_unique_properties(cls, cpf: str, email: str,
-                                             user_being_edited_id: int | None = None) -> User | None:
+    def get_user_with_same_unique_properties(
+            cls,
+            cpf: str,
+            email: EmailStr,
+            user_being_edited_id: int | None = None
+    ) -> User | None:
         with Session(engine) as session:
             if user_being_edited_id:
                 stmt = (
@@ -146,4 +187,5 @@ class UserService:
                 delete(User)
                 .where(User.id == current_user.id)
             )
+
             session.commit()

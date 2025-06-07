@@ -10,7 +10,7 @@ router = APIRouter(prefix="/user")
 # TODO: middleware que valide e-mail e cpf do usuário
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create(user_form: UserForm) -> UserResponse:
-    error = UserService.validate(user_form)
+    error = UserService.validate_unique_fields(user_form)
     if error:
         raise error
 
@@ -26,7 +26,7 @@ async def get(user: ActiveUser):
 
 @router.put("", status_code=status.HTTP_204_NO_CONTENT)
 async def update(edited_data: UserForm, current_user: ActiveUser):
-    error = UserService.validate(edited_data, current_user.id)
+    error = UserService.validate_unique_fields(edited_data, current_user.id)
     if error:
         raise error
 

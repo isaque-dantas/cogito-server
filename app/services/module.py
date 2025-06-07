@@ -78,9 +78,5 @@ class ModuleService:
     @classmethod
     def delete(cls, module: Module):
         with Session(engine) as session:
-            session.exec(
-                delete(Module)
-                .where(Module.id == module.id)
-            )
-
+            session.delete(module)
             session.commit()

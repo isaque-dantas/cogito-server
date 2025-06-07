@@ -73,9 +73,5 @@ class LessonService:
     @classmethod
     def delete(cls, lesson: Lesson):
         with Session(engine) as session:
-            session.exec(
-                delete(Lesson)
-                .where(Lesson.id == lesson.id)
-            )
-
+            session.delete(lesson)
             session.commit()

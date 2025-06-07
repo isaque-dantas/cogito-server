@@ -67,9 +67,5 @@ class CourseService:
     @classmethod
     def delete(cls, course: Course):
         with Session(engine) as session:
-            session.exec(
-                delete(Course)
-                .where(Course.id == course.id)
-            )
-
+            session.delete(course)
             session.commit()

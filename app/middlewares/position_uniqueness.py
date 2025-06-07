@@ -1,7 +1,6 @@
 from typing import Annotated
 from fastapi import HTTPException, Depends, status
 from sqlmodel import select
-from pydantic import BaseModel
 
 from app.models import Session, engine, Module, Lesson
 from app.middlewares.resource_existence import ExistentModule, ExistentCourse, ExistentLesson
@@ -83,5 +82,3 @@ ModuleFormWithUniquePosition = Annotated[ModuleForm, Depends(ModulePositionUniqu
 
 ExistentLessonWithUniquePosition = Annotated[Lesson, Depends(LessonPositionUniquenessMiddleware.handle_existent)]
 LessonFormWithUniquePosition = Annotated[LessonForm, Depends(LessonPositionUniquenessMiddleware.handle_form)]
-
-# TODO: add option for checking lesson position uniqueness
