@@ -1,10 +1,12 @@
 from collections.abc import Sequence
-from typing import List
+from typing import List, Optional
+
+from fastapi import Depends
 
 from sqlmodel import select, update, delete
-from app.models import Lesson, Session, engine, Module, User
+from app.models import Lesson, Session, engine, Module, User, SessionDep
 from app.models.user_accesses_lesson import UserAccessesLessonLink
-from app.schemas.lesson import LessonForm, LessonResponse, LessonNestedForm
+from app.schemas.lesson import LessonForm, LessonResponse, LessonNestedForm, LessonStatus
 
 
 class LessonService:
@@ -20,83 +22,117 @@ class LessonService:
         ]
 
     @classmethod
-    def to_response(cls, lesson: Lesson) -> LessonResponse:
+    def to_response(cls, lesson: Lesson, user_requesting_access: Optional[User] = None) -> LessonResponse:
+        lesson_status_for_user: LessonStatus = LessonService.get_lesson_status_for_user(lesson, user_requesting_access)
+
+        should_include_video_link = (
+                user_requesting_access is not None
+                and
+                lesson_status_for_user != LessonStatus.LOCKED
+        )
+
         return LessonResponse(
             id=lesson.id,
             title=lesson.title,
             position=lesson.position,
-            video_link=lesson.video_link,
+            video_link=lesson.video_link if should_include_video_link else None,
         )
 
     @classmethod
-    def get_related_to_module(cls, module_id: int) -> Sequence[Lesson]:
-        with Session(engine) as session:
-            return session.scalars(
-                select(Lesson).where(Lesson.module_id == module_id)
-            ).all()
+    def get_related_to_module(cls, module_id: int, session: Session = Depends(SessionDep)) -> Sequence[Lesson]:
+        return session.scalars(
+            select(Lesson).where(Lesson.module_id == module_id)
+        ).all()
 
     @classmethod
-    def register(cls, lesson_form: LessonForm, module: Module) -> Lesson:
-        with Session(engine) as session:
-            lesson = Lesson(
-                title=lesson_form.title,
-                position=lesson_form.position,
-                video_link=lesson_form.video_link,
-                module=module
+    def register(cls, lesson_form: LessonForm, module: Module, session: Session = Depends(SessionDep)) -> Lesson:
+        lesson = Lesson(
+            title=lesson_form.title,
+            position=lesson_form.position,
+            video_link=lesson_form.video_link,
+            module=module
+        )
+
+        session.add(lesson)
+        session.commit()
+        session.refresh(lesson)
+
+        return lesson
+
+    @classmethod
+    def get_by_id(cls, lesson_id: int, session: Session = Depends(SessionDep)):
+        return session.get(Lesson, lesson_id)
+
+    @classmethod
+    def update(cls, edited_data: LessonForm, lesson: Lesson, session: Session = Depends(SessionDep)):
+        session.exec(
+            update(Lesson)
+            .where(Lesson.id == lesson.id)
+            .values(
+                title=edited_data.title,
+                position=edited_data.position,
+                video_link=edited_data.video_link,
             )
+        )
 
-            session.add(lesson)
-            session.commit()
-            session.refresh(lesson)
-
-            return lesson
+        session.commit()
 
     @classmethod
-    def get_by_id(cls, lesson_id: int):
-        with Session(engine) as session:
-            return session.get(Lesson, lesson_id)
+    def delete(cls, lesson: Lesson, session: Session = Depends(SessionDep)):
+        session.delete(lesson)
+        session.commit()
 
     @classmethod
-    def update(cls, edited_data: LessonForm, lesson: Lesson):
-        with Session(engine) as session:
-            session.exec(
-                update(Lesson)
-                .where(Lesson.id == lesson.id)
-                .values(
-                    title=edited_data.title,
-                    position=edited_data.position,
-                    video_link=edited_data.video_link,
-                )
+    def register_user_access(cls, lesson: Lesson, user: User, session: Session = Depends(SessionDep)) -> None:
+        if cls.has_user_already_accessed_lesson(lesson, user):
+            return
+
+        access = UserAccessesLessonLink(
+            user_id=user.id,
+            lesson_id=lesson.id
+        )
+
+        session.add(access)
+        session.commit()
+
+    @classmethod
+    def has_user_already_accessed_lesson(cls, lesson: Lesson, user: User,
+                                         session: Session = Depends(SessionDep)) -> bool:
+        access = session.scalars(
+            select(UserAccessesLessonLink)
+            .where(
+                (UserAccessesLessonLink.user_id == user.id)
+                &
+                (UserAccessesLessonLink.lesson_id == lesson.id)
             )
+        ).first()
 
-            session.commit()
-
-    @classmethod
-    def delete(cls, lesson: Lesson):
-        with Session(engine) as session:
-            session.delete(lesson)
-            session.commit()
+        return bool(access)
 
     @classmethod
-    def register_user_access(cls, lesson: Lesson, current_user: User) -> None:
-        with Session(engine) as session:
-            if cls.has_user_already_accessed_lesson(lesson, current_user):
-                return
+    def get_lesson_status_for_user(cls, lesson: Lesson, user: User) -> LessonStatus:
+        previous_lesson: Optional[Lesson] = cls.get_previous_lesson(lesson)
+        if previous_lesson is None:
+            return LessonStatus.ACCESSIBLE
 
-            access = UserAccessesLessonLink(
-                user_id=current_user.id,
-                lesson_id=lesson.id
+        if not cls.has_user_already_accessed_lesson(previous_lesson, user):
+            return LessonStatus.LOCKED
+
+        if cls.has_user_already_accessed_lesson(lesson, user):
+            return LessonStatus.ACCESSED
+
+        return LessonStatus.ACCESSIBLE
+
+    @classmethod
+    def get_previous_lesson(cls, lesson: Lesson, session: Session = Depends(SessionDep)) -> Optional[Lesson]:
+        if lesson.position == 0 and lesson.module.position == 0:
+            return None
+
+        return session.scalar(
+            select(Lesson)
+            .where(
+                (Lesson.position == (lesson.position - 1))
+                &
+                (Lesson.module.course == lesson.module.course)
             )
-
-            session.add(access)
-            session.commit()
-
-    @classmethod
-    def has_user_already_accessed_lesson(cls, lesson: Lesson, user: User) -> bool:
-        with Session(engine) as session:
-            access = session.scalars(
-                select(UserAccessesLessonLink)
-                .where((UserAccessesLessonLink.user_id == user.id) & (UserAccessesLessonLink.lesson_id == lesson.id))
-            ).first()
-
-            return bool(access)
+        )

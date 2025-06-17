@@ -16,17 +16,17 @@ router = APIRouter()
     status_code=status.HTTP_201_CREATED,
     dependencies=[CoordinatorOnlyDependency]
 )
-async def create(lesson_form: LessonFormWithUniquePosition, module: ExistentModule):
+async def create(lesson_form: LessonFormWithUniquePosition, module: ExistentModule, current_user: PossibleActiveUser):
     lesson = LessonService.register(lesson_form, module)
-    return LessonService.to_response(lesson)
+    return LessonService.to_response(lesson, current_user)
 
 
 @router.get("/lesson/{lesson_id}")
-async def get(lesson: ExistentLesson, possible_current_user: PossibleActiveUser):
-    if possible_current_user:
-        LessonService.register_user_access(lesson, possible_current_user)
+async def get(lesson: ExistentLesson, current_user: PossibleActiveUser):
+    if current_user:
+        LessonService.register_user_access(lesson, current_user)
 
-    return LessonService.to_response(lesson)
+    return LessonService.to_response(lesson, current_user)
 
 
 @router.put("/lesson/{lesson_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[CoordinatorOnlyDependency])

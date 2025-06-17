@@ -1,8 +1,9 @@
-from typing import List, Sequence
+from typing import List, Sequence, Optional
 
 from sqlmodel import Session, select, update, delete
 
-from app.models import Module, Course, engine
+from app.models import Module, Course, engine, User
+from app.schemas.lesson import LessonResponse, LessonStatus
 from app.schemas.module import ModuleForm, ModuleResponse, ModuleUpdateForm, ModuleNestedForm
 from app.services.lesson import LessonService
 
@@ -20,7 +21,7 @@ class ModuleService:
         ]
 
     @classmethod
-    def to_response(cls, module) -> ModuleResponse:
+    def to_response(cls, module, user: Optional[User]) -> ModuleResponse:
         lessons = LessonService.get_related_to_module(module.id)
 
         return ModuleResponse(
@@ -28,7 +29,7 @@ class ModuleService:
             title=module.title,
             position=module.position,
             lessons=[
-                LessonService.to_response(lesson)
+                LessonService.to_response(lesson, user)
                 for lesson in lessons
             ],
         )

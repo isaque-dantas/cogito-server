@@ -1,4 +1,7 @@
+from typing import Optional
+
 from pydantic import BaseModel
+import enum
 
 
 class LessonNestedForm(BaseModel):
@@ -9,8 +12,14 @@ class LessonNestedForm(BaseModel):
 class LessonForm(BaseModel):
     title: str
     position: int
-    video_link: str
+    video_link: Optional[str]
 
 
 class LessonResponse(LessonForm):
     id: int
+
+
+class LessonStatus(str, enum.Enum):
+    LOCKED = "LOCKED"
+    ACCESSIBLE = "ACCESSIBLE"
+    ACCESSED = "ACCESSED"

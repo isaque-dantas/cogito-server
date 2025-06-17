@@ -26,18 +26,18 @@ class CourseService:
             return course
 
     @classmethod
-    def to_response(cls, course: Course) -> CourseResponse:
+    def to_response(cls, course: Course, user_requesting_access: User) -> CourseResponse:
         modules = ModuleService.get_related_to_course(course.id)
-        user: User = UserService.get_by_id(course.user_who_created_id)
+        user_who_created: User = UserService.get_by_id(course.user_who_created_id)
 
         return CourseResponse(
             id=course.id,
             title=course.title,
             modules=[
-                ModuleService.to_response(module)
+                ModuleService.to_response(module, user_requesting_access)
                 for module in modules
             ],
-            user_who_created=UserService.to_response(user)
+            user_who_created=UserService.to_response(user_who_created)
         )
 
     @classmethod
@@ -72,13 +72,13 @@ class CourseService:
             session.commit()
 
     @classmethod
-    def subscribe(cls, course: Course, current_user: User) -> None:
+    def subscribe(cls, course: Course, user: User) -> None:
         with Session(engine) as session:
-            if cls.has_user_already_subscribed_to_course(course, current_user):
+            if cls.has_user_already_subscribed_to_course(course, user):
                 return
 
             subscription = UserSubscribesInCourseLink(
-                user_id=current_user.id,
+                user_id=user.id,
                 course_id=course.id
             )
 
