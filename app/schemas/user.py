@@ -17,8 +17,8 @@ class UserForm(BaseModel):
     cpf: str = Field(min_length=CPF_DIGITS_AMOUNT, max_length=CPF_DIGITS_AMOUNT)
     password: str
 
-    @field_validator('cpf', mode='after')
     @classmethod
+    @field_validator('cpf', mode='after')
     def is_valid_cpf(cls, cpf: str) -> str:
         if validate_cpf.is_valid(cpf):
             return cpf
