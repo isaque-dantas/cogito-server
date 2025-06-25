@@ -24,6 +24,7 @@ def test_create__on_happy_path__should_return_created():
         created_lessons: List[Lesson] = Lesson.select().join(Module).where(Module.course_id == course.id).objects()
         assert len(created_lessons) == NUMBER_OF_LESSONS_IN_EXAMPLE_DATA
 
+
 def test_to_response__on_happy_path__should_return():
     reset_database()
 

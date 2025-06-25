@@ -6,6 +6,8 @@ from app.schemas.course import CourseForm
 from app.schemas.lesson import LessonNestedForm
 from app.schemas.module import ModuleNestedForm
 from app.schemas.user import UserForm
+from app.services.course import CourseService
+from app.services.user import UserService
 
 client = TestClient(app)
 
@@ -51,3 +53,12 @@ def reset_database():
             .delete()
             .where(User.email == example_test_data['user'].email)
         ).execute()
+
+
+def create_example_data():
+    try:
+        with db.atomic():
+            user = UserService.register(example_test_data['user'])
+            CourseService.register(example_test_data['course'], user)
+    except:
+        print("Não foi possível criar os dados")
