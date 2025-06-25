@@ -1,16 +1,11 @@
-from typing import List
+from peewee import ForeignKeyField, CharField, IntegerField
 
-from sqlmodel import Field, SQLModel, Relationship
-
+from app.models.db import BaseModel
 from app.models import Course
 
 
-class Module(SQLModel, table=True):
-    id: int = Field(default=None, primary_key=True)
-    title: str
-    position: int
+class Module(BaseModel):
+    title = CharField()
+    position = IntegerField()
 
-    course_id: int = Field(default=None, foreign_key="course.id")
-    course: Course = Relationship(back_populates="modules")
-
-    lessons: List["Lesson"] = Relationship(back_populates="module", cascade_delete=True)
+    course = ForeignKeyField(Course, backref='modules', on_delete='CASCADE')

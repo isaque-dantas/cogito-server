@@ -1,11 +1,12 @@
-from typing import Annotated
+from typing import Annotated, TypeVar
 
 from fastapi import Request, HTTPException, Depends
-from app.models import Session, engine, Course, Module, Lesson
+from app.models import Course, Module, Lesson, db
 
+T = TypeVar('T', type[Course], type[Module], type[Lesson])
 
 class ResourceExistenceMiddleware:
-    def __init__(self, resource_class, resource_id_path_parameter_name: str):
+    def __init__(self, resource_class: T, resource_id_path_parameter_name: str):
         self.resource_id_path_parameter_name = resource_id_path_parameter_name
         self.resource_class = resource_class
 
@@ -19,8 +20,8 @@ class ResourceExistenceMiddleware:
         except ValueError:
             ...
 
-        with Session(engine) as session:
-            resource = session.get(self.resource_class, resource_id)
+        with db.atomic():
+            resource = self.resource_class.get_by_id(resource_id)
             if resource is None:
                 raise HTTPException(
                     status_code=404,

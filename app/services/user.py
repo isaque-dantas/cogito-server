@@ -1,11 +1,8 @@
 from fastapi import HTTPException, status
-from sqlmodel import Session, select, update, delete
 import bcrypt
 from pydantic import EmailStr
-import validate_cpf
 
-from app.models import engine
-from app.models.user import User, UserRoles
+from app.models import User, UserRoles, db
 from app.schemas.user import UserResponse, UserForm
 
 
@@ -14,13 +11,13 @@ class UserService:
 
     @classmethod
     def get_by_email(cls, email: str) -> User | None:
-        with Session(engine) as session:
-            return session.scalars(select(User).where(User.email == email)).first()
+        with db.atomic():
+            return User.get_or_none(User.email == email)
 
     @classmethod
     def get_by_id(cls, user_id: int) -> User | None:
-        with Session(engine) as session:
-            return session.get(User, user_id)
+        with db.atomic():
+            return User.get(User.id == user_id)
 
     @classmethod
     def to_response(cls, user: User) -> UserResponse:
@@ -35,10 +32,14 @@ class UserService:
     def register(cls, user_form: UserForm) -> User:
         user = cls.to_model(user_form)
 
-        with Session(engine) as session:
-            session.add(user)
-            session.commit()
-            session.refresh(user)
+        with db.atomic():
+            user = User.create(
+                name=user.name,
+                email=user.email,
+                cpf=user.cpf,
+                hashed_password=user.hashed_password,
+                role=user.role
+            )
 
         return user
 
@@ -54,22 +55,19 @@ class UserService:
 
     @classmethod
     def update(cls, edited_data: UserForm, user: User) -> None:
-        with Session(engine) as session:
+        with db.atomic():
             edited_user = cls.to_model(edited_data)
-            print(edited_user.name)
 
-            session.exec(
-                update(User)
+            (
+                User
+                .update({
+                    User.name: edited_user.name,
+                    User.email: edited_user.email,
+                    User.cpf: edited_user.cpf,
+                    User.hashed_password: edited_user.hashed_password
+                })
                 .where(User.id == user.id)
-                .values(
-                    name=edited_user.name,
-                    email=edited_user.email,
-                    cpf=edited_user.cpf,
-                    hashed_password=edited_user.hashed_password
-                )
-            )
-
-            session.commit()
+            ).execute()
 
     @classmethod
     def get_password_hash(cls, password) -> str:
@@ -85,42 +83,13 @@ class UserService:
 
         return bcrypt.checkpw(password=plain_encoded, hashed_password=hashed_encoded)
 
-    # @classmethod
-    # def get_exception_for_cpf_and_email(cls, cpf: str, email: EmailStr) -> HTTPException | None:
-    #     invalid_fields: list[str] = []
-    #     detail: dict[str, str] = {}
-    #
-    #     cpf_error_detail = cls.get_cpf_error_detail(cpf)
-    #     if cpf_error_detail:
-    #         detail.update({"cpf": cpf_error_detail})
-    #
-    #     email_error_detail = cls.get_email_error_detail(email)
-    #     if email_error_detail:
-    #         detail.update({"email": email_error_detail})
-    #
-    #     if not invalid_fields:
-    #         return None
-    #
-    #     return HTTPException(
-    #         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-    #         detail=detail
-    #     )
-    #
-    # @classmethod
-    # def get_cpf_error_detail(cls, cpf: str) -> str | None:
-    #     is_valid = validate_cpf.is_valid(cpf)
-    #
-    #     if is_valid:
-    #         return None
-    #
-    #     if len(cpf) != cls.CPF_DIGITS_AMOUT:
-    #         return f"The 'cpf' must have {cls.CPF_DIGITS_AMOUT} characters, but has {len(cpf)}"
-    #
-    #     return "The informed 'cpf' does not exist."
-
     @classmethod
-    def validate_unique_fields(cls, user_form: UserForm,
-                               user_being_edited_id: int | None = None) -> HTTPException | None:
+    def validate_unique_fields(
+            cls,
+            translate,
+            user_form: UserForm,
+            user_being_edited_id: int | None = None
+    ) -> HTTPException | None:
         previously_registered_user_with_same_properties: User = (
             cls.get_user_with_same_unique_properties(
                 cpf=user_form.cpf,
@@ -137,11 +106,12 @@ class UserService:
             [
                 field for field in unique_fields
                 if getattr(previously_registered_user_with_same_properties, field) == getattr(user_form, field)
-            ]
+            ],
+            translate
         )
 
         return HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=error_detail,
         )
 
@@ -152,40 +122,46 @@ class UserService:
             email: EmailStr,
             user_being_edited_id: int | None = None
     ) -> User | None:
-        with Session(engine) as session:
+        with db.atomic():
             if user_being_edited_id:
-                stmt = (
-                    select(User)
-                    .where(User.id != user_being_edited_id)
-                    .where((User.email == email) | (User.cpf == cpf))
+                q = (
+                    User
+                    .select()
+                    .where(
+                        (User.id != user_being_edited_id)
+                        &
+                        ((User.email == email) | (User.cpf == cpf))
+                    )
                 )
             else:
-                stmt = (
-                    select(User)
-                    .where((User.email == email) | (User.cpf == cpf))
+                q = (
+                    User
+                    .select()
+                    .where(
+                        ((User.email == email) | (User.cpf == cpf))
+                    )
                 )
 
-            return session.scalars(stmt).first()
+            return q.execute()
 
     @classmethod
-    def parse_error_detail_for_uniqueness_validation(cls, fields: list[str]) -> str:
+    def parse_error_detail_for_uniqueness_validation(cls, fields: list[str], translate) -> str:
         parsed_fields = ', '.join(
             [f"'{field}'" for field in fields]
         )
 
         if len(fields) > 1:
-            return f"Values for fields {parsed_fields} must be unique but were already registered."
+            return translate("Values for fields %s must be unique but were already registered.") % parsed_fields
         elif len(fields) == 1:
-            return f"Value for field {parsed_fields} must be unique but was already registered."
+            return translate("Value for field %s must be unique but was already registered.") % parsed_fields
 
         return ""
 
     @classmethod
     def delete(cls, current_user):
-        with Session(engine) as session:
-            session.exec(
-                delete(User)
+        with db.atomic():
+            (
+                User
+                .delete()
                 .where(User.id == current_user.id)
-            )
-
-            session.commit()
+            ).execute()

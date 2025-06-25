@@ -19,4 +19,4 @@ async def login_for_access_token(form_data: UserLoginForm) -> Token:
 
     access_token = AuthService.create_access_token(data={"sub": user.email})
 
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(access=access_token, type="bearer")

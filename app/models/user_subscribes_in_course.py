@@ -1,20 +1,11 @@
 from datetime import datetime
-from typing import Optional
 
-from sqlalchemy.sql.expression import text
-from sqlalchemy.sql.schema import Column
-from sqlalchemy.sql.sqltypes import TIMESTAMP
-from sqlmodel import Field, SQLModel
+from peewee import ForeignKeyField, DateTimeField
 
+from app.models.db import BaseModel
+from app.models import User
 
-class UserSubscribesInCourseLink(SQLModel, table=True):
-    user_id: int = Field(default=None, primary_key=True, foreign_key="user.id")
-    course_id: int = Field(default=None, primary_key=True, foreign_key="course.id")
-    timestamp: Optional[datetime] = Field(
-        default=None,
-        sa_column=Column(
-            TIMESTAMP(timezone=True),
-            nullable=False,
-            server_default=text("CURRENT_TIMESTAMP")
-        )
-    )
+class UserSubscribesInCourse(BaseModel):
+    user_id = ForeignKeyField(User, backref='users', on_delete='CASCADE')
+    course_id = ForeignKeyField(User, backref='courses', on_delete='CASCADE')
+    timestamp = DateTimeField(default=datetime.now)

@@ -1,32 +1,29 @@
-from typing import Sequence
+from typing import Optional, List
 
-from app.models import Course, engine, User
-from app.models.user_subscribes_in_course import UserSubscribesInCourseLink
+from app.models import Course, User, db
+from app.models.user_subscribes_in_course import UserSubscribesInCourse
 from app.schemas.course import CourseForm, CourseResponse, CoursePatchForm
-from sqlmodel import Session, select, update, delete
 
 from app.services.module import ModuleService
 from app.services.user import UserService
+from app.services.user_course import UserCourseService
 
 
 class CourseService:
     @classmethod
     def register(cls, course_form: CourseForm, user_who_created: User) -> Course:
-        with Session(engine) as session:
-            course = Course(
+        with db.atomic():
+            course = Course.create(
                 title=course_form.title,
-                modules=ModuleService.get_instances_from_data(course_form.modules),
                 user_who_created=user_who_created
             )
 
-            session.add(course)
-            session.commit()
-            session.refresh(course)
+            ModuleService.create_from_form_list(course_form.modules, course)
 
             return course
 
     @classmethod
-    def to_response(cls, course: Course, user_requesting_access: User) -> CourseResponse:
+    def to_response(cls, course: Course, user_requesting_access: Optional[User]) -> CourseResponse:
         modules = ModuleService.get_related_to_course(course.id)
         user_who_created: User = UserService.get_by_id(course.user_who_created_id)
 
@@ -37,64 +34,53 @@ class CourseService:
                 ModuleService.to_response(module, user_requesting_access)
                 for module in modules
             ],
-            user_who_created=UserService.to_response(user_who_created)
+            user_who_created=UserService.to_response(user_who_created),
+            is_subscribed=(
+                UserCourseService.has_user_already_subscribed_to_course(course, user_requesting_access)
+                if user_requesting_access
+                else False
+            )
         )
 
     @classmethod
-    def get_all(cls):
-        with Session(engine) as session:
-            courses: Sequence[Course] = session.scalars(select(Course)).all()
+    def get_all(cls, user_requesting_access: Optional[User]):
+        with db.atomic():
+            courses: List[Course] = Course.select().execute()
             return [
-                CourseService.to_response(course)
+                CourseService.to_response(course, user_requesting_access)
                 for course in courses
             ]
 
     @classmethod
     def get_by_id(cls, course_id: int) -> Course | None:
-        with Session(engine) as session:
-            return session.get(Course, course_id)
+        with db.atomic():
+            return Course.get(Course.id == course_id)
 
     @classmethod
     def patch(cls, edited_data: CoursePatchForm, course: Course):
-        with Session(engine) as session:
-            session.exec(
-                update(Course)
+        with db.atomic():
+            (
+                Course
+                .update({Course.title: edited_data.title})
                 .where(Course.id == course.id)
-                .values(title=edited_data.title)
-            )
-
-            session.commit()
+            ).execute()
 
     @classmethod
     def delete(cls, course: Course):
-        with Session(engine) as session:
-            session.delete(course)
-            session.commit()
+        with db.atomic():
+            (
+                Course
+                .delete()
+                .where(Course.id == course.id)
+            ).execute()
 
     @classmethod
     def subscribe(cls, course: Course, user: User) -> None:
-        with Session(engine) as session:
-            if cls.has_user_already_subscribed_to_course(course, user):
+        with db.atomic():
+            if UserCourseService.has_user_already_subscribed_to_course(course, user):
                 return
 
-            subscription = UserSubscribesInCourseLink(
+            UserSubscribesInCourse.create(
                 user_id=user.id,
                 course_id=course.id
             )
-
-            session.add(subscription)
-            session.commit()
-
-    @classmethod
-    def has_user_already_subscribed_to_course(cls, course: Course, user: User) -> bool:
-        with Session(engine) as session:
-            subscription = session.scalars(
-                select(UserSubscribesInCourseLink)
-                .where(
-                    (UserSubscribesInCourseLink.user_id == user.id)
-                    &
-                    (UserSubscribesInCourseLink.course_id == course.id)
-                )
-            ).first()
-
-            return bool(subscription)

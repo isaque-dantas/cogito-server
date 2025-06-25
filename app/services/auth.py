@@ -12,8 +12,8 @@ from app.models.user import User
 
 
 class Token(BaseModel):
-    access_token: str
-    token_type: str
+    access: str
+    type: str
 
 
 class AuthService:
@@ -72,7 +72,7 @@ class AuthService:
 
     @classmethod
     async def get_mandatory_current_user(cls, token: Annotated[str, Depends(mandatory_oauth2_scheme)]):
-        return cls.get_user_from_token(token)
+        return await cls.get_user_from_token(token)
 
     @classmethod
     async def get_possible_current_user(cls, token: Annotated[Optional[str], Depends(possible_oauth2_scheme)]) -> Optional[User]:

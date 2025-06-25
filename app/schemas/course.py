@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 from app.schemas.module import ModuleResponse, ModuleNestedForm
@@ -8,6 +10,7 @@ class CourseForm(BaseModel):
     title: str
     modules: list[ModuleNestedForm]
 
+
 class CoursePatchForm(BaseModel):
     title: str
 
@@ -17,3 +20,4 @@ class CourseResponse(BaseModel):
     title: str
     modules: list[ModuleResponse]
     user_who_created: UserResponse
+    is_subscribed: Optional[bool]

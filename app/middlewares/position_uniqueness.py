@@ -1,8 +1,7 @@
 from typing import Annotated
 from fastapi import HTTPException, Depends, status
-from sqlmodel import select
 
-from app.models import Session, engine, Module, Lesson
+from app.models import Module, Lesson, db
 from app.middlewares.resource_existence import ExistentModule, ExistentCourse, ExistentLesson
 from app.schemas.lesson import LessonForm
 from app.schemas.module import ModuleForm
@@ -14,14 +13,14 @@ class ModulePositionUniquenessMiddleware:
     )
 
     @classmethod
-    def handle_existent(cls, module: ExistentModule):
+    def handle_existent(cls, module: ExistentModule) -> Module:
         if cls.is_position_already_occupied(module.position, module.course_id, module.id):
             raise cls.exception
 
         return module
 
     @classmethod
-    def handle_form(cls, module_form: ModuleForm, course: ExistentCourse):
+    def handle_form(cls, module_form: ModuleForm, course: ExistentCourse) -> ModuleForm:
         if cls.is_position_already_occupied(module_form.position, course.id):
             raise cls.exception
 
@@ -33,11 +32,12 @@ class ModulePositionUniquenessMiddleware:
         if module_id is not None:
             condition = condition & (Module.id != module_id)
 
-        with Session(engine) as session:
-            modules_with_informed_position = session.scalars(
-                select(Module)
+        with db.atomic():
+            modules_with_informed_position = (
+                Module
+                .select()
                 .where(condition)
-            ).all()
+            ).execute()
 
             return len(modules_with_informed_position) > 0
 
@@ -49,14 +49,14 @@ class LessonPositionUniquenessMiddleware:
     )
 
     @classmethod
-    def handle_existent(cls, lesson: ExistentLesson):
+    def handle_existent(cls, lesson: ExistentLesson) -> Lesson:
         if cls.is_position_already_occupied(lesson.position, lesson.module_id, lesson.id):
             raise cls.exception
 
         return lesson
 
     @classmethod
-    def handle_form(cls, lesson_form: LessonForm, module: ExistentCourse):
+    def handle_form(cls, lesson_form: LessonForm, module: ExistentCourse) -> LessonForm:
         if cls.is_position_already_occupied(lesson_form.position, module.id):
             raise cls.exception
 
@@ -68,11 +68,12 @@ class LessonPositionUniquenessMiddleware:
         if lesson_id is not None:
             condition = condition & (Lesson.id != lesson_id)
 
-        with Session(engine) as session:
-            lessons_with_informed_position = session.scalars(
-                select(Lesson)
+        with db.atomic():
+            lessons_with_informed_position = (
+                Lesson
+                .select()
                 .where(condition)
-            ).all()
+            ).execute()
 
             return len(lessons_with_informed_position) > 0
 

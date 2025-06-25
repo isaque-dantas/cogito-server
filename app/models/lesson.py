@@ -1,16 +1,12 @@
-from sqlmodel import Field, SQLModel, Relationship
+from peewee import CharField, IntegerField, ForeignKeyField
 
-from app.models import Module, User
-from app.models.user_accesses_lesson import UserAccessesLessonLink
+from app.models.db import BaseModel
+from app.models import Module
 
 
-class Lesson(SQLModel, table=True):
-    id: int = Field(default=None, primary_key=True)
-    title: str
-    position: int
-    video_link: str
+class Lesson(BaseModel):
+    title = CharField()
+    position = IntegerField()
+    video_link = CharField(max_length=64)
 
-    module_id: int = Field(default=None, foreign_key="module.id")
-    module: Module = Relationship(back_populates="lessons")
-
-    users: list["User"] = Relationship(back_populates="lessons", link_model=UserAccessesLessonLink)
+    module = ForeignKeyField(Module, backref='lessons', on_delete='CASCADE')
