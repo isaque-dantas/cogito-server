@@ -7,8 +7,6 @@ from app.schemas.user import UserResponse, UserForm
 
 
 class UserService:
-    CPF_DIGITS_AMOUT = 11
-
     @classmethod
     def get_by_email(cls, email: str) -> User | None:
         with db.atomic():
@@ -17,7 +15,7 @@ class UserService:
     @classmethod
     def get_by_id(cls, user_id: int) -> User | None:
         with db.atomic():
-            return User.get(User.id == user_id)
+            return User.get_or_none(User.id == user_id)
 
     @classmethod
     def to_response(cls, user: User) -> UserResponse:
@@ -98,7 +96,7 @@ class UserService:
             )
         )
 
-        if not previously_registered_user_with_same_properties:
+        if previously_registered_user_with_same_properties is None:
             return None
 
         unique_fields: list[str] = ['cpf', 'email']

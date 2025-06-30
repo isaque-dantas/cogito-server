@@ -1,13 +1,8 @@
-from typing import List
-
-from app.models import Course, Module, Lesson, User
-from app.models.db import db
-from app.schemas.course import CourseResponse
 from app.schemas.module import ModuleResponse
 from app.services.course import CourseService
 from app.services.module import ModuleService
 from app.services.user import UserService
-from app.tests import example_test_data, reset_database, NUMBER_OF_LESSONS_IN_EXAMPLE_DATA
+from app.tests import example_test_data, reset_database
 
 
 def test_to_response__on_happy_path__should_return():

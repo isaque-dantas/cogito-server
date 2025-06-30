@@ -21,7 +21,7 @@ class ResourceExistenceMiddleware:
             ...
 
         with db.atomic():
-            resource = self.resource_class.get_by_id(resource_id)
+            resource = self.resource_class.get_or_none(self.resource_class.id == resource_id)
             if resource is None:
                 raise HTTPException(
                     status_code=404,

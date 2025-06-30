@@ -21,3 +21,5 @@ class CourseResponse(BaseModel):
     modules: list[ModuleResponse]
     user_who_created: UserResponse
     is_subscribed: Optional[bool]
+    has_user_finished: Optional[bool]
+    progress_level_percentage: Optional[float]

@@ -22,3 +22,7 @@ msgstr "Values for fields %s must be unique but were already registered."
 msgid "Value for field %s must be unique but was already registered."
 msgstr "Value for field %s must be unique but was already registered."
 
+#, python-format
+msgid "You have already subscribed to this course."
+msgstr "You have already subscribed to this course."
+

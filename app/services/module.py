@@ -23,7 +23,7 @@ class ModuleService:
             title=module.title,
             position=module.position,
             lessons=[
-                LessonService.to_response(lesson, user_requesting_access)
+                LessonService.to_response(lesson, user_requesting_access, is_nested_response=True)
                 for lesson in module.lessons
             ],
         )

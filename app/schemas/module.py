@@ -1,11 +1,14 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
-from app.schemas.lesson import LessonForm, LessonResponse, LessonNestedForm
+from app.schemas.lesson import LessonForm, LessonResponse, LessonNestedForm, LessonNestedResponse
 
 
 class ModuleNestedForm(BaseModel):
     title: str
     lessons: list[LessonNestedForm]
+
 
 class ModuleForm(BaseModel):
     title: str
@@ -14,11 +17,12 @@ class ModuleForm(BaseModel):
 
 
 class ModuleUpdateForm(BaseModel):
-    title: str
-    position: int
+    title: Optional[str]
+    position: Optional[int]
+
 
 class ModuleResponse(BaseModel):
     id: int
     title: str
     position: int
-    lessons: list[LessonResponse]
+    lessons: list[LessonNestedResponse]

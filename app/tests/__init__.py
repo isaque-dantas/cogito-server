@@ -20,17 +20,17 @@ example_test_data = {
             ModuleNestedForm(
                 title="Módulo 1 - Visão geral",
                 lessons=[
-                    LessonNestedForm(title="Introdução ao uso do Blender", video_link="link"),
-                    LessonNestedForm(title="Instalação do Blender (Windows, Ubuntu e MacOs)", video_link="link"),
-                    LessonNestedForm(title="Visão geral da interface gráfica", video_link="link"),
+                    LessonNestedForm(title="Introdução ao uso do Blender", video_link="arDCZNsdU60"),
+                    LessonNestedForm(title="Instalação do Blender (Windows, Ubuntu e MacOs)", video_link="eP3Ncwc4xuQ"),
+                    LessonNestedForm(title="Visão geral da interface gráfica", video_link="arDCZNsdU60"),
                 ]
             ),
             ModuleNestedForm(
                 title="Módulo 2 - Visão geral",
                 lessons=[
-                    LessonNestedForm(title="Introdução ao uso do Blender", video_link="link"),
-                    LessonNestedForm(title="Instalação do Blender (Windows, Ubuntu e MacOs)", video_link="link"),
-                    LessonNestedForm(title="Visão geral da interface gráfica", video_link="link"),
+                    LessonNestedForm(title="Introdução ao uso do Blender", video_link="eP3Ncwc4xuQ"),
+                    LessonNestedForm(title="Instalação do Blender (Windows, Ubuntu e MacOs)", video_link="arDCZNsdU60"),
+                    LessonNestedForm(title="Visão geral da interface gráfica", video_link="eP3Ncwc4xuQ"),
                 ]
             ),
         ]

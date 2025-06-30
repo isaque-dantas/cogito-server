@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 
 from pydantic import BaseModel
 import enum
@@ -19,9 +19,17 @@ class LessonForm(LessonNestedForm):
     position: int
 
 
-class LessonResponse(BaseModel):
+class LessonNestedResponse(BaseModel):
     id: int
     title: str
     position: int
     video_link: Optional[str]
-    status: Optional[LessonStatus]
+    status: LessonStatus
+
+
+class LessonResponse(LessonNestedResponse):
+    parent_course_title: str
+    parent_module_title: str
+    position_related_to_course: Literal["first", "middle", "last"]
+    previous_lesson_id: Optional[int]
+    next_lesson_id: Optional[int]

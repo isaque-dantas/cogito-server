@@ -27,6 +27,19 @@ class CourseService:
         modules = ModuleService.get_related_to_course(course.id)
         user_who_created: User = UserService.get_by_id(course.user_who_created_id)
 
+        is_subscribed = (
+            UserCourseService.has_user_already_subscribed_to_course(course, user_requesting_access)
+            if user_requesting_access
+            else False
+        )
+
+        if is_subscribed:
+            progress_level_percentage, has_user_finished = (
+                UserCourseService.get_progress_data(course, user_requesting_access)
+            )
+        else:
+            progress_level_percentage, has_user_finished = (None, None)
+
         return CourseResponse(
             id=course.id,
             title=course.title,
@@ -35,11 +48,9 @@ class CourseService:
                 for module in modules
             ],
             user_who_created=UserService.to_response(user_who_created),
-            is_subscribed=(
-                UserCourseService.has_user_already_subscribed_to_course(course, user_requesting_access)
-                if user_requesting_access
-                else False
-            )
+            is_subscribed=is_subscribed,
+            progress_level_percentage=progress_level_percentage,
+            has_user_finished=has_user_finished,
         )
 
     @classmethod
@@ -73,14 +84,3 @@ class CourseService:
                 .delete()
                 .where(Course.id == course.id)
             ).execute()
-
-    @classmethod
-    def subscribe(cls, course: Course, user: User) -> None:
-        with db.atomic():
-            if UserCourseService.has_user_already_subscribed_to_course(course, user):
-                return
-
-            UserSubscribesInCourse.create(
-                user_id=user.id,
-                course_id=course.id
-            )

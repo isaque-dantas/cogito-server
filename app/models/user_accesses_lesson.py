@@ -12,5 +12,5 @@ from app.models import User, Lesson
 
 
 class UserAccessesLesson(BaseModel):
-    user_id = ForeignKeyField(User)
-    lesson_id = ForeignKeyField(Lesson)
+    user = ForeignKeyField(User, on_delete='CASCADE')
+    lesson = ForeignKeyField(Lesson, on_delete='CASCADE')
