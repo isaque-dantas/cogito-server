@@ -7,6 +7,7 @@ from peewee import fn
 from app.models import Lesson, Module, User, Course, db, UserRoles
 from app.models.user_accesses_lesson import UserAccessesLesson
 from app.schemas.lesson import LessonForm, LessonResponse, LessonNestedForm, LessonStatus, LessonNestedResponse
+from app.schemas.lesson import ModuleNestedResponse
 from app.services.user_course import UserCourseService
 
 
@@ -57,10 +58,6 @@ class LessonService:
                 status=lesson_status_for_user,
             )
 
-        (parent_module_title, parent_course_title) = (
-            cls.get_parent_titles(lesson, parent_module, parent_course)
-        )
-
         return LessonResponse(
             id=lesson.id,
             title=lesson.title,
@@ -68,8 +65,12 @@ class LessonService:
             video_link=lesson.video_link if should_include_video_link else None,
             status=lesson_status_for_user,
             # status=LessonStatus.ACCESSED,
-            parent_module_title=parent_module_title,
-            parent_course_title=parent_course_title,
+            parent_module=ModuleNestedResponse(
+                id=lesson.module.id,
+                title=lesson.module.title,
+                position=lesson.module.position
+            ),
+            parent_course_title=lesson.module.course.title,
             position_related_to_course=cls.get_position_related_to_course(lesson),
             previous_lesson_id=cls.get_previous_lesson_id(lesson),
             next_lesson_id=cls.get_next_lesson_id(lesson),

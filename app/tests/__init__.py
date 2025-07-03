@@ -15,29 +15,30 @@ example_test_data = {
     'user': UserForm(name='name', password='password', email='test-email@email.com', cpf='73990286056'),
 
     'course': CourseForm(
-        title="(test) Introdução à computação gráfica com Blender I",
+        title="Introdução à computação gráfica com Blender I",
         modules=[
             ModuleNestedForm(
-                title="Módulo 1 - Visão geral",
+                title="Visão geral",
                 lessons=[
-                    LessonNestedForm(title="Introdução ao uso do Blender", video_link="arDCZNsdU60"),
-                    LessonNestedForm(title="Instalação do Blender (Windows, Ubuntu e MacOs)", video_link="eP3Ncwc4xuQ"),
-                    LessonNestedForm(title="Visão geral da interface gráfica", video_link="arDCZNsdU60"),
+                    LessonNestedForm(title="Introdução ao uso do Blender", video_link="EA3WYhPgCCM"),
+                    LessonNestedForm(title="Instalação do Blender (Windows, Ubuntu e MacOs)", video_link="Ztcm1iWoWxM"),
+                    LessonNestedForm(title="Visão geral da interface gráfica", video_link="2GJe_iIhD8E"),
                 ]
             ),
             ModuleNestedForm(
-                title="Módulo 2 - Visão geral",
+                title="Usos da interface",
                 lessons=[
-                    LessonNestedForm(title="Introdução ao uso do Blender", video_link="eP3Ncwc4xuQ"),
-                    LessonNestedForm(title="Instalação do Blender (Windows, Ubuntu e MacOs)", video_link="arDCZNsdU60"),
-                    LessonNestedForm(title="Visão geral da interface gráfica", video_link="eP3Ncwc4xuQ"),
+                    LessonNestedForm(title="Uso em jogos", video_link="w0LAS3tuYBs"),
+                    LessonNestedForm(title="Uso na indústria automobilística", video_link="WVNRCGriaGI"),
+                    LessonNestedForm(title="Usos da medicina 3D e da biotecnologia", video_link="u6owJ0Wst8Q"),
+                    LessonNestedForm(title="Uso nos mecanismos de acessibilidade para pessoas com deficiência visual", video_link="u6owJ0Wst8Q"),
                 ]
             ),
         ]
     )
 }
 
-NUMBER_OF_LESSONS_IN_EXAMPLE_DATA = 6
+NUMBER_OF_LESSONS_IN_EXAMPLE_DATA = 7
 
 
 def reset_database():

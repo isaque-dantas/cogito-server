@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from app.schemas.lesson import LessonForm, LessonResponse, LessonNestedForm, LessonNestedResponse
+from app.schemas.lesson import LessonForm, LessonNestedForm, LessonNestedResponse
 
 
 class ModuleNestedForm(BaseModel):
@@ -26,3 +26,5 @@ class ModuleResponse(BaseModel):
     title: str
     position: int
     lessons: list[LessonNestedResponse]
+
+

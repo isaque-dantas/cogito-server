@@ -27,9 +27,15 @@ class LessonNestedResponse(BaseModel):
     status: LessonStatus
 
 
+class ModuleNestedResponse(BaseModel):
+    id: int
+    title: str
+    position: int
+
+
 class LessonResponse(LessonNestedResponse):
     parent_course_title: str
-    parent_module_title: str
+    parent_module: ModuleNestedResponse
     position_related_to_course: Literal["first", "middle", "last"]
     previous_lesson_id: Optional[int]
     next_lesson_id: Optional[int]

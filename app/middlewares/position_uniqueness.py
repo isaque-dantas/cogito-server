@@ -56,7 +56,7 @@ class LessonPositionUniquenessMiddleware:
         return lesson
 
     @classmethod
-    def handle_form(cls, lesson_form: LessonForm, module: ExistentCourse) -> LessonForm:
+    def handle_form(cls, lesson_form: LessonForm, module: ExistentModule) -> LessonForm:
         if cls.is_position_already_occupied(lesson_form.position, module.id):
             raise cls.exception
 

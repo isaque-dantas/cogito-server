@@ -40,12 +40,15 @@ class ModuleService:
     @classmethod
     def register(cls, module_form: ModuleForm, course: Course) -> Module:
         with db.atomic():
-            return Module.create(
+            module: Module = Module.create(
                 title=module_form.title,
                 position=module_form.position,
-                lessons=module_form.lessons,
                 course=course,
             )
+
+            LessonService.create_from_form_list(module_form.lessons, module)
+
+            return module
 
     @classmethod
     def get_by_id(cls, module_id: int):
@@ -54,13 +57,19 @@ class ModuleService:
 
     @classmethod
     def update(cls, edited_data: ModuleUpdateForm, module: Module):
+        data_to_update = {}
+        if edited_data.title is not None:
+            data_to_update.update({Module.title: edited_data.title})
+        if edited_data.position is not None:
+            data_to_update.update({Module.position: edited_data.position})
+
+        if not edited_data:
+            return
+
         with db.atomic():
             (
                 Module
-                .update({
-                    Module.title: edited_data.title,
-                    Module.position: edited_data.position
-                })
+                .update(data_to_update)
                 .where(Module.id == module.id)
             ).execute()
 
