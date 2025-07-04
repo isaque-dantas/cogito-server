@@ -78,6 +78,13 @@ class ModuleService:
         with db.atomic():
             (
                 Module
+                .update({Module.position: Module.position - 1})
+                .where((Module.course.id == module.course.id) & (Module.position > module.position))
+                .execute()
+            )
+
+            (
+                Module
                 .delete()
                 .where(Module.id == module.id)
             ).execute()

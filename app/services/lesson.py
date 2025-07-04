@@ -118,9 +118,17 @@ class LessonService:
         with db.atomic():
             (
                 Lesson
+                .update({Lesson.position: Lesson.position - 1})
+                .where((Lesson.module_id == lesson.module_id) & (Lesson.position > lesson.position))
+                .execute()
+            )
+
+            (
+                Lesson
                 .delete()
                 .where(Lesson.id == lesson.id)
-            ).execute()
+                .execute()
+            )
 
     @classmethod
     def register_user_access(cls, lesson: Lesson, user: User) -> None:

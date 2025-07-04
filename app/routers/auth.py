@@ -17,6 +17,6 @@ async def login_for_access_token(form_data: UserLoginForm) -> Token:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = AuthService.create_access_token(data={"sub": user.email, "role": user.role})
+    access_token = AuthService.create_access_token(data={"sub": user.email, "role": user.role, "name": user.name})
 
     return Token(access=access_token, type="bearer")
