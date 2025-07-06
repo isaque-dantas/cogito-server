@@ -1,7 +1,6 @@
 from typing import Optional, List
 
 from app.models import Course, User, db
-from app.models.user_subscribes_in_course import UserSubscribesInCourse
 from app.schemas.course import CourseForm, CourseResponse, CoursePatchForm
 
 from app.services.module import ModuleService
@@ -56,7 +55,7 @@ class CourseService:
     @classmethod
     def get_all(cls, user_requesting_access: Optional[User]):
         with db.atomic():
-            courses: List[Course] = Course.select().execute()
+            courses: List[Course] = Course.select().objects()
             return [
                 CourseService.to_response(course, user_requesting_access)
                 for course in courses
@@ -84,3 +83,12 @@ class CourseService:
                 .delete()
                 .where(Course.id == course.id)
             ).execute()
+
+    @classmethod
+    def get_all_matching_title(cls, user: Optional[User], q: str) -> List[CourseResponse]:
+        with db.atomic():
+            courses: List[Course] = Course.select().where(Course.title.contains(q)).objects()
+            return [
+                cls.to_response(course, user)
+                for course in courses
+            ]

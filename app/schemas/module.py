@@ -13,7 +13,7 @@ class ModuleNestedForm(BaseModel):
 class ModuleForm(BaseModel):
     title: str
     position: int
-    lessons: list[LessonForm]
+    lessons: list[LessonNestedForm]
 
 
 class ModuleUpdateForm(BaseModel):

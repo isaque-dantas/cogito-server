@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import HTTPException, status
 import bcrypt
 from pydantic import EmailStr
@@ -119,7 +121,7 @@ class UserService:
             cpf: str,
             email: EmailStr,
             user_being_edited_id: int | None = None
-    ) -> User | None:
+    ) -> Optional[User]:
         with db.atomic():
             if user_being_edited_id:
                 q = (
@@ -140,7 +142,7 @@ class UserService:
                     )
                 )
 
-            return q.execute()
+            return q.first()
 
     @classmethod
     def parse_error_detail_for_uniqueness_validation(cls, fields: list[str], translate) -> str:

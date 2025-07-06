@@ -35,9 +35,7 @@ class LessonService:
             cls,
             lesson: Lesson,
             user_requesting_access: Optional[User] = None,
-            is_nested_response: bool = False,
-            parent_module: Optional[Module] = None,
-            parent_course: Optional[Course] = None,
+            is_nested_response: bool = False
     ) -> LessonResponse | LessonNestedResponse:
         lesson_status_for_user: LessonStatus = (
             LessonService.get_lesson_status_for_user(lesson, user_requesting_access)
@@ -83,6 +81,7 @@ class LessonService:
                 Lesson
                 .select()
                 .where(Lesson.module_id == module_id)
+                .order_by(Lesson.position)
             )
 
     @classmethod

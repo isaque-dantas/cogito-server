@@ -1,3 +1,5 @@
+from typing import Optional
+
 from starlette import status
 from fastapi import APIRouter, Response, Request, HTTPException
 
@@ -18,7 +20,10 @@ async def create(course_form: CourseForm, current_user: CoordinatorLogged):
 
 
 @router.get("")
-async def get_all(current_user: PossibleActiveUser):
+async def get_all(current_user: PossibleActiveUser, q: Optional[str] = None):
+    if q:
+        return CourseService.get_all_matching_title(current_user, q)
+
     return CourseService.get_all(current_user)
 
 

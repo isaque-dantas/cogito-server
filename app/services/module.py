@@ -16,15 +16,13 @@ class ModuleService:
 
     @classmethod
     def to_response(cls, module: Module, user_requesting_access: Optional[User]) -> ModuleResponse:
-        # lessons = LessonService.get_related_to_module(module.id)
-
         return ModuleResponse(
             id=module.id,
             title=module.title,
             position=module.position,
             lessons=[
                 LessonService.to_response(lesson, user_requesting_access, is_nested_response=True)
-                for lesson in module.lessons
+                for lesson in LessonService.get_related_to_module(module)
             ],
         )
 
@@ -35,6 +33,7 @@ class ModuleService:
                 Module
                 .select()
                 .where(Module.course_id == course_id)
+                .order_by(Module.position)
             )
 
     @classmethod
