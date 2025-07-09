@@ -23,3 +23,10 @@ class CourseResponse(BaseModel):
     is_subscribed: Optional[bool]
     has_user_finished: Optional[bool]
     progress_level_percentage: Optional[float]
+
+class CourseResponseWithCoordinatorInfo(BaseModel):
+    id: int
+    title: str
+    not_subscribed_students: int
+    subscribed_students: int
+    students_who_finished: int

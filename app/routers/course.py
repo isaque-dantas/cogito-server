@@ -5,6 +5,7 @@ from fastapi import APIRouter, Response, Request, HTTPException
 
 from app.middlewares.user_role import CoordinatorOnlyDependency, CoordinatorLogged
 from app.middlewares.resource_existence import ExistentCourse
+from app.models import UserRoles
 from app.schemas.course import CourseForm, CoursePatchForm
 from app.services.auth import ActiveUser, PossibleActiveUser
 from app.services.course import CourseService
@@ -20,9 +21,17 @@ async def create(course_form: CourseForm, current_user: CoordinatorLogged):
 
 
 @router.get("")
-async def get_all(current_user: PossibleActiveUser, q: Optional[str] = None):
+async def get_all(current_user: PossibleActiveUser, q: Optional[str] = None, coordinator_info: Optional[bool] = None):
     if q:
         return CourseService.get_all_matching_title(current_user, q)
+
+    if coordinator_info:
+        if current_user is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        elif current_user.role != UserRoles.coordinator:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        return UserCourseService.get_all_with_coordinator_info()
 
     return CourseService.get_all(current_user)
 
