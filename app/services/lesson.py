@@ -200,17 +200,25 @@ class LessonService:
             if previous_lesson_in_same_module is not None:
                 return previous_lesson_in_same_module
 
+            previous_module = (
+                Module.get(
+                    (Module.position == lesson.module.position - 1)
+                    &
+                    (Module.course_id == lesson.module.course_id)
+                )
+            )
+
             max_lesson_position_for_previous_module = (
                 Lesson
                 .select(fn.Max(Lesson.position))
-                .where(Lesson.module_id == lesson.module_id - 1)
+                .where(Lesson.module_id == previous_module.id)
             )
 
             previous_lesson_in_previous_module = (
                 Lesson.get_or_none(
                     (Lesson.position.in_(max_lesson_position_for_previous_module))
                     &
-                    (Lesson.module_id == lesson.module_id - 1)
+                    (Lesson.module_id == previous_module.id)
                 )
             )
 
@@ -222,7 +230,7 @@ class LessonService:
             last_lesson_of_module: Lesson = lesson.module.lessons[-1]
             last_module_of_course: Module = lesson.module.course.modules[-1]
 
-            if lesson.position == last_lesson_of_module.position and last_module_of_course.position == 0:
+            if lesson.position == last_lesson_of_module.position and last_module_of_course.position == lesson.module.position:
                 return None
 
             next_lesson_in_same_module = (
@@ -236,11 +244,19 @@ class LessonService:
             if next_lesson_in_same_module is not None:
                 return next_lesson_in_same_module
 
+            next_module_of_course = (
+                Module.get(
+                    (Module.position == lesson.module.position + 1)
+                    &
+                    (Module.course_id == lesson.module.course_id)
+                )
+            )
+
             first_lesson_in_next_module = (
                 Lesson.get_or_none(
                     (Lesson.position == 0)
                     &
-                    (Lesson.module_id == lesson.module_id + 1)
+                    (Lesson.module_id == next_module_of_course.id)
                 )
             )
 
