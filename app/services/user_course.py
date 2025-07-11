@@ -68,14 +68,27 @@ class UserCourseService:
     @classmethod
     def get_all_with_coordinator_info(cls):
         with db.atomic():
-            raw_query = """
-                        SELECT 
-                            c.id,
-                            c.title,
+            students_who_finished_raw_query = """
+            FROM user AS u
+                     JOIN usersubscribesincourse uc on u.id = uc.user_id
+                     JOIN course on uc.course_id = course.id
+                     JOIN useraccesseslesson AS ul on u.id = ul.user_id
+            WHERE course.id = c.id
+              and (SELECT COUNT(useraccesseslesson.id)
+                   FROM useraccesseslesson
+                   WHERE useraccesseslesson.user_id = u.id) = (SELECT COUNT(lesson.id)
+                                                               FROM lesson
+                                                                        JOIN module on lesson.module_id = module.id
+                                                                        JOIN course on module.course_id = course.id
+                                                               WHERE course.id = c.id)"""
+
+            raw_query = f"""
+                        SELECT c.id,
+                               c.title,
                                (SELECT COUNT(course.id)
                                 FROM course
                                          JOIN usersubscribesincourse AS uc on course.id = uc.course_id
-                                WHERE course.id = c.id)                                                     AS subscribed_students,
+                                WHERE course.id = c.id AND uc.user_id not in (SELECT u.id {students_who_finished_raw_query})) AS subscribed_students,
 
                                (
                                    (SELECT COUNT(user.id) FROM user) -
@@ -83,25 +96,12 @@ class UserCourseService:
                                     FROM course
                                              JOIN usersubscribesincourse AS uc on course.id = uc.course_id
                                     WHERE course.id = c.id)
-                                   )                                                                        AS not_subscribed_students,
-                            
-                               (SELECT COUNT(distinct u.id)
-                                FROM user AS u
-                                         JOIN usersubscribesincourse uc on u.id = uc.user_id
-                                         JOIN course on uc.course_id = course.id
-                                         JOIN useraccesseslesson AS ul on u.id = ul.user_id
-                                WHERE course.id = c.id
-                                  and (SELECT COUNT(useraccesseslesson.id)
-                                       FROM useraccesseslesson
-                                       WHERE useraccesseslesson.user_id = u.id) = (SELECT COUNT(lesson.id)
-                                                                                   FROM lesson
-                                                                                            JOIN module on lesson.module_id = module.id
-                                                                                            JOIN course on module.course_id = course.id
-                                                                                   WHERE course.id = c.id)) AS students_who_finished
+                                   )                    AS not_subscribed_students,
+
+                               (SELECT COUNT(distinct u.id) {students_who_finished_raw_query}) AS students_who_finished
                         FROM course c;"""
 
             cursor = db.execute_sql(raw_query)
-            print(cursor)
 
             return [
                 CourseResponseWithCoordinatorInfo(
@@ -113,5 +113,3 @@ class UserCourseService:
                 )
                 for row in cursor.fetchall()
             ]
-
-
